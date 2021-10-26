@@ -11,6 +11,12 @@ seven_ci = []
 six_ci = []
 five_ci = []
 four_ci = []
+
+w_five_ci1 = []
+w_five_ci2 = []
+w_five_ci3 = []
+w_five_ci4 = []
+
 # Blue triangle and Red K10 R(3, 10)
 # No edge = 0
 # Blue = 1
@@ -29,7 +35,7 @@ for i in range(0, 30): # Adding the numbers to each independent set
         four_ci.append(i)
 
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci]
+    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, w_five_ci1, w_five_ci2, w_five_ci3, w_five_ci4]
 
     for i in range(0, len(ci_list)):
         number1_is_in_ci = False
@@ -54,6 +60,21 @@ def make_graph(w_number, h_number):
         for column in range(0, w_number+h_number):
             if line > column: # Bottom left corner of matrix
                 if is_part_of_ci(line, column) == False:
+                    # THIS IS WHERE THINGS MUST HAPPEN
+
+                    # GET SOME RANDOM VERTICES TO MAKE THE W'S
+
+                    # THEN ESTABLISH ANOTHER 4 LISTS OF 5-CI'S
+
+                    # ADD THEM TO THE LISTS AT THE TOP
+
+                    # MAKE THE IS PART OF CI BS RECEIVE THEM
+
+                    # WELL ACTUALLY, MAKE SURE TO MAKE THE NUMBER OF NEIGHBOS OF EACH VI CUSTOMIZABLE
+                    # SO THAT THERE IS THE POSSIBILITY FOR MORE COMBINATIONS
+
+                    # IK ITS HARD BUT JUST MAKE A LIST OF LISTS, IN WHICH THERE WILL BE THE LISTS OF W (NEIGHBORS OF VI)
+                    # THEN MAKE A FOR LOOP THAT ADDS THEM TO THE CI LIST IN THE is_part_of_ci FUNCTION
                     blue_or_red = random.choice([1, 2])
                     matrix[line].append(blue_or_red)
                 else:
@@ -85,7 +106,7 @@ for line in range(0, len(matrix)):
                         color = 'red'
                     G.add_edge(line, column, color=color, weight=2)
 
-pos = nx.spiral_layout(G)
+pos = nx.kamada_kawai_layout(G)
 edges = G.edges()
 colors = [G[u][v]['color'] for u,v in edges]
 weights = [G[u][v]['weight'] for u,v in edges]
