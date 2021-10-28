@@ -1,130 +1,196 @@
-from inspect import GEN_CREATED
-import random
-import matplotlib
-import networkx
+import discord
+import time
+import selenium
+from selenium import webdriver
+from bs4 import BeautifulSoup
+import asyncio
+import re
+import requests
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
+import random
 
-# Things to do:
-# turn graph into a tree
-# Make triangle and 10-CI detector based on finding clumps of vertices
+class previous_user_data:
+    def __init__(self):
+        self.friends = []
+        self.following = []
+        self.badges = []
 
-eight_ci = []
-seven_ci = []
-six_ci = []
-five_ci = []
-four_ci = []
+class User:
+  def __init__(self):
+    self.friends = "0"
+    self.followers = "0"
+    self.following = "0"
+    self.name = "0"
+    self.display_name = "0"
+    self.about_status = "0"
+    self.avatar_url = "0"
+    self.badges = []
+    self.badge_descriptions = []
+    self.friend_names_list = []
+    self.friend_online = []
+    self.friend_ids = []
 
-vi_neighbors_list = [[], [], [], []]
+def fetch_profile_information(soup, current_user):
+    friends = str(soup.find("span", {"class": "font-header-2 ng-binding"}))
+    friends = friends.replace('<span class="font-header-2 ng-binding" ng-bind="profileHeaderLayout.friendsCount | abbreviate" title="', '')
+    friends = friends.split('"')[0]
+    current_user.friends = friends
 
+    followers = str(soup.find("span", {"ng-bind": "getAbbreviatedStringFromCountValue(profileHeaderLayout.followersCount)"}))
+    followers = followers.replace('<span class="font-header-2 ng-binding" ng-bind="getAbbreviatedStringFromCountValue(profileHeaderLayout.followersCount)" title="', '')
+    followers = followers.split('"')[0]
+    current_user.followers = followers
 
-# Blue triangle and Red K10 R(3, 10)
-# No edge = 0
-# Blue = 1
-# Red = 2
+    following = str(soup.find("span", {"ng-bind": "getAbbreviatedStringFromCountValue(profileHeaderLayout.followingsCount)"}))
+    following = following.replace('<span class="font-header-2 ng-binding" ng-bind="getAbbreviatedStringFromCountValue(profileHeaderLayout.followingsCount)" title="', '')
+    following = following.split('"')[0]
+    current_user.following = following
 
-for i in range(0, 30): # Adding the numbers to each independent set
-    if i < 8:
-        eight_ci.append(i)
-    if i > 7 and i < 15:
-        seven_ci.append(i)
-    if i > 14 and i < 21:
-        six_ci.append(i)
-    if i > 20 and i < 26:
-        five_ci.append(i)
-    if i > 25 and i < 30:
-        four_ci.append(i)
+    display_name = str(soup.find("h2", {"class": "profile-name text-overflow"})).replace("\n", "")
+    display_name = display_name.split(">")[1].split("<")[0].replace(" ", "")
+    current_user.display_name = display_name
 
-def vertex_is_a_w(vertex):
-    found = False
-    for i in range(0, len(vi_neighbors_list)):
-        if vertex in vi_neighbors_list[i]:
-            found = True
-    return found
+    name = str(soup.find("div", {"class": "profile-display-name font-caption-body text text-overflow"})).replace("\n", "")
+    name = name.replace(" ", "")
+    name = name.split(">")[1].split("<")[0].replace("@", "")
+    current_user.name = name
+        
+    about_status = str(soup.find("meta", {"name": "description"})).replace("\n", "")
+    about_status = about_status.replace('<meta content="', "").split('"')[0]
+    about_status = about_status.split("!")[1]
+    current_user.about_status = about_status
 
-def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci]
-    for i in range(0, len(vi_neighbors_list)):
-        ci_list.append(vi_neighbors_list[i])
+    avatar_url = str(soup.find("meta", {"property": "og:image"})).replace("\n", "")
+    avatar_url = avatar_url.replace('<meta content="', "").split('"')[0]
+    current_user.avatar_url = avatar_url
 
-    for i in range(0, len(ci_list)):
-        number1_is_in_ci = False
-        number2_is_in_ci = False
-        for j in range(0, len(ci_list[i])):
-            if number1 == ci_list[i][j]:
-                number1_is_in_ci = True
-            if number2 == ci_list[i][j]:
-                number2_is_in_ci = True
-            if number1_is_in_ci == True and number2_is_in_ci == True:
-                return True
-    return False
-
-def make_graph(w_number, h_number):
-    matrix = []
-    for i in range(0, w_number+h_number):
-        matrix.append([])
-
-    for vi in range(0, len(vi_neighbors_list)):
-        number_of_neighbors = 0
-        while number_of_neighbors != 5:
-            random_number = random.randint(0, w_number+h_number-1)
-            found_it_in_vi = False
-            for i in range(0, len(vi_neighbors_list[vi])):
-                if random_number in vi_neighbors_list[i]:
-                    found_it_in_vi = True
-            if found_it_in_vi == False:
-                vi_neighbors_list[vi].append(random_number)
-                number_of_neighbors += 1
-
-    print("VI NEIGHBOR LIST: " + str(vi_neighbors_list))
-
-    for line in range(0, w_number+h_number):
-        for column in range(0, w_number+h_number):
-            if line > column: # Bottom left corner of matrix
-                if is_part_of_ci(line, column) == False:
-                    # THIS IS WHERE THINGS MUST HAPPEN
-
-                    
-                    blue_or_red = random.choice([1, 2])
-                    matrix[line].append(blue_or_red)
-                else:
-                    matrix[line].append(0)
-            else:
-                matrix[line].append(0)
-
-    return matrix
+def fetch_badges(soup, current_user): # Browser must be on https://badges.roblox.com/v1/users/81827160/badges?limit=10&sortOrder=Asc
+    s = str(soup)
+    badge_names = s.split('"name":"')
+    for i in range(0, len(badge_names)):
+        if i % 2 != 0:
+            current_user.badges.append(badge_names[i].split('"')[0])
     
-matrix = make_graph(20, 15)
+    badge_descriptions = s.split('"description":"')
+    for i in range(0, len(badge_descriptions)):
+        if i % 2 != 0:
+            current_user.badge_descriptions.append(badge_descriptions[i].split('"')[0])
 
-print(str(matrix).replace("]", "]\n"))
-file = open("matrix.txt", "w")
-file.write(str(matrix).replace("]", "]\n"))
-file.close()
+def fetch_friends(soup, current_user): # Browser must be on https://friends.roblox.com/v1/users/81827160/friends?limit=25&sortOrder=Desc
+    print("Fetching friends")
+    s = str(soup)
+    friend_names_list = s.split('"name":"')
+    for i in range(0, len(friend_names_list)):
+        if i % 2 != 0:
+            current_user.friend_names_list.append(friend_names_list[i].split('"')[0])
 
-# Making a graph out of the matrix (unrelated to how the matrix is generated)
+    friend_online = s.split('"isOnline":')
+    for i in range(0, len(friend_online)):
+        if i % 2 != 0:
+            current_user.friend_online.append(friend_online[i].split(',')[0])
 
-G=nx.Graph()
+    friend_ids = s.split('"id":')
+    for i in range(0, len(friend_ids)):
+        if i % 2 != 0:
+            current_user.friend_ids.append(friend_ids[i].split(',')[0])
 
-for line in range(0, len(matrix)):
-        for column in range(0, len(matrix[line])):
-            if line > column: # Bottom left corner of matrix
-                color = 0
-                if matrix[line][column] != 0:
-                    if matrix[line][column] == 1:
-                        color = 'blue'
-                    if matrix[line][column] == 2:
-                        color = 'red'
-                    if vertex_is_a_w(line) == True:
-                        G.add_edge("W" + str(line), column, color=color, weight=2)
-                    else:
-                        G.add_edge("h" + str(line), column, color=color, weight=2)
-                    
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("--incognito")
+browser = webdriver.Chrome(chrome_options=chrome_options)
+time.sleep(2)
 
-pos = nx.spring_layout(G, k=10)
-edges = G.edges()
-colors = [G[u][v]['color'] for u,v in edges]
-weights = [G[u][v]['weight'] for u,v in edges]
+# URL = "http://free-proxy.cz/en/proxylist/country/all/socks5/ping/all/"
+# r = browser.get(URL)
+# soup = BeautifulSoup(browser.page_source, "html.parser")
+# print(soup.prettify())
 
-nx.draw(G, pos, edge_color=colors, width=1, with_labels=True)
-plt.show()
+conversation = False
+
+client = discord.Client()
+@client.event
+async def on_ready():
+    print("ready")
+
+@client.event
+async def on_message(message):
+    if str(message.content).split(" ")[0] == ";watch":
+        await message.channel.send("Fetching information... :eye:")
+        r = browser.get("https://www.roblox.com/users/" + str(message.content).split(" ")[1] + "/profile")
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+        current_user = User()
+        fetch_profile_information(soup, current_user)
+
+        embedVar = discord.Embed(title=current_user.name, description=current_user.display_name, color=0xfab6dd)
+        embedVar.add_field(name="Friends: ", value=str(current_user.friends), inline=False)
+        embedVar.add_field(name="Followers: ", value=str(current_user.followers), inline=False)
+        embedVar.add_field(name="Following: ", value=str(current_user.following), inline=False)
+        embedVar.add_field(name="About status: ", value=str(current_user.about_status), inline=False)
+        embedVar.set_image(url=current_user.avatar_url)    #the image itself
+        await message.channel.send(embed=embedVar)
+
+        asyncio.sleep(3)
+        r = browser.get("https://badges.roblox.com/v1/users/" + str(message.content).split(" ")[1] + "/badges?limit=25&sortOrder=Desc")
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+        fetch_badges(soup, current_user)
+
+        embedVar2 = discord.Embed(title=str(current_user.name) + "'s last few badges", description=current_user.display_name, color=0x0B646D)
+        try:
+            for i in range(0, len(current_user.badges)):
+                embedVar2.add_field(name=str(current_user.badges[i]), value=str(current_user.badge_descriptions[i]), inline=False)
+        except Exception as e:
+            print("Problem with the badge names/descriptions")
+        await message.channel.send(embed=embedVar2)
+
+        r = browser.get("https://friends.roblox.com/v1/users/" + str(message.content).split(" ")[1] + "/friends?limit=10&sortOrder=Desc")
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+        fetch_friends(soup, current_user)
+        print(str(current_user.friend_names_list))
+        print(str(current_user.friend_online))
+
+        asyncio.sleep(3)
+        embedVar3 = discord.Embed(title=str(current_user.name) + "'s last few friends", description=current_user.display_name, color=0x2acaea)
+        try:
+            for i in range(0, len(current_user.friend_names_list)):
+                embedVar3.add_field(name=str(current_user.friend_names_list[i]), value="Is online: " + str(current_user.friend_online[i]), inline=False)
+        except Exception as e:
+            print("Problem with the friend names/online_bools")
+        await message.channel.send(embed=embedVar3)
+    
+    if str(message.content).split(" ")[0] == ";probe":
+        current_user = User()
+        r = browser.get("https://www.roblox.com/users/" + str(message.content).split(" ")[1] + "/profile")
+        soup = BeautifulSoup(browser.page_source, "html.parser")
+        fetch_profile_information(soup, current_user)
+
+        G=nx.Graph()
+        user_id = message.content.split(" ")[1]
+        number_of_people = int(message.content.split(" ")[2])
+        soup = str(requests.get("https://friends.roblox.com/v1/users/" + str(user_id) + "/friends?limit=10&sortOrder=Desc").content)
+        fetch_friends(soup, current_user)
+        if number_of_people > len(current_user.friend_names_list):
+            number_of_people = len(current_user.friend_names_list)
+        for i in range(0, number_of_people):
+            if current_user.friend_online[i] == "true":
+                G.add_edge(current_user.friend_names_list[i], current_user.name, color='green', weight=2)
+            else:
+                G.add_edge(current_user.friend_names_list[i], current_user.name, color='yellow', weight=2)
+
+        # Plotting graph
+        pos = nx.circular_layout(G)
+        edges = G.edges()
+        colors = [G[u][v]['color'] for u,v in edges]
+        weights = [G[u][v]['weight'] for u,v in edges]
+        nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, font_size=8)
+        file_name = "graph" + str(random.randint(0, 1000)) + ".png"
+        plt.savefig(file_name)
+        await message.channel.send(file=discord.File(file_name))
+        G.clear()
+        plt.clf()
+
+        
+        
+
+
+client.run("ODg2MzE3MTEyMzY3MzkwNzYw.YTz1Ig.qmRNuLGNQI1M_GqipDtRsyCHhqE", bot=True)
