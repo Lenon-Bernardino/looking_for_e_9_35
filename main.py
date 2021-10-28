@@ -6,16 +6,18 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
+# Things to do:
+# turn graph into a tree
+# Make triangle and 10-CI detector based on finding clumps of vertices
+
 eight_ci = []
 seven_ci = []
 six_ci = []
 five_ci = []
 four_ci = []
 
-w_five_ci1 = []
-w_five_ci2 = []
-w_five_ci3 = []
-w_five_ci4 = []
+vi_neighbors_list = [[], [], [], []]
+
 
 # Blue triangle and Red K10 R(3, 10)
 # No edge = 0
@@ -34,8 +36,17 @@ for i in range(0, 30): # Adding the numbers to each independent set
     if i > 25 and i < 30:
         four_ci.append(i)
 
+def vertex_is_a_w(vertex):
+    found = False
+    for i in range(0, len(vi_neighbors_list)):
+        if vertex in vi_neighbors_list[i]:
+            found = True
+    return found
+
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, w_five_ci1, w_five_ci2, w_five_ci3, w_five_ci4]
+    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci]
+    for i in range(0, len(vi_neighbors_list)):
+        ci_list.append(vi_neighbors_list[i])
 
     for i in range(0, len(ci_list)):
         number1_is_in_ci = False
@@ -53,8 +64,20 @@ def make_graph(w_number, h_number):
     matrix = []
     for i in range(0, w_number+h_number):
         matrix.append([])
-    w_vertices = []
 
+    for vi in range(0, len(vi_neighbors_list)):
+        number_of_neighbors = 0
+        while number_of_neighbors != 5:
+            random_number = random.randint(0, w_number+h_number-1)
+            found_it_in_vi = False
+            for i in range(0, len(vi_neighbors_list[vi])):
+                if random_number in vi_neighbors_list[i]:
+                    found_it_in_vi = True
+            if found_it_in_vi == False:
+                vi_neighbors_list[vi].append(random_number)
+                number_of_neighbors += 1
+
+    print("VI NEIGHBOR LIST: " + str(vi_neighbors_list))
 
     for line in range(0, w_number+h_number):
         for column in range(0, w_number+h_number):
@@ -62,19 +85,7 @@ def make_graph(w_number, h_number):
                 if is_part_of_ci(line, column) == False:
                     # THIS IS WHERE THINGS MUST HAPPEN
 
-                    # GET SOME RANDOM VERTICES TO MAKE THE W'S
-
-                    # THEN ESTABLISH ANOTHER 4 LISTS OF 5-CI'S
-
-                    # ADD THEM TO THE LISTS AT THE TOP
-
-                    # MAKE THE IS PART OF CI BS RECEIVE THEM
-
-                    # WELL ACTUALLY, MAKE SURE TO MAKE THE NUMBER OF NEIGHBOS OF EACH VI CUSTOMIZABLE
-                    # SO THAT THERE IS THE POSSIBILITY FOR MORE COMBINATIONS
-
-                    # IK ITS HARD BUT JUST MAKE A LIST OF LISTS, IN WHICH THERE WILL BE THE LISTS OF W (NEIGHBORS OF VI)
-                    # THEN MAKE A FOR LOOP THAT ADDS THEM TO THE CI LIST IN THE is_part_of_ci FUNCTION
+                    
                     blue_or_red = random.choice([1, 2])
                     matrix[line].append(blue_or_red)
                 else:
@@ -104,9 +115,13 @@ for line in range(0, len(matrix)):
                         color = 'blue'
                     if matrix[line][column] == 2:
                         color = 'red'
-                    G.add_edge(line, column, color=color, weight=2)
+                    if vertex_is_a_w(line) == True:
+                        G.add_edge("W" + str(line), column, color=color, weight=2)
+                    else:
+                        G.add_edge("h" + str(line), column, color=color, weight=2)
+                    
 
-pos = nx.kamada_kawai_layout(G)
+pos = nx.spring_layout(G, k=10)
 edges = G.edges()
 colors = [G[u][v]['color'] for u,v in edges]
 weights = [G[u][v]['weight'] for u,v in edges]
