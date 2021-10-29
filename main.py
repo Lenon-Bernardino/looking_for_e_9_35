@@ -10,6 +10,14 @@ from networkx.drawing.nx_pydot import graphviz_layout
 # turn graph into a tree
 # Make triangle and 10-CI detector based on finding clumps of vertices
 
+# Problems to fix:
+# 1. There's repetitions in the vi neighbor list
+# 2. The graph is making vi neighbors adjacent to each other
+
+# ISSUE 2 IS PROBABLY IN THE MAKING OF THE MATRIX
+
+# 3. The graph is painting some H-W vertices in yellow even though yellow is for the W's
+
 eight_ci = []
 seven_ci = []
 six_ci = []
@@ -38,9 +46,11 @@ for i in range(0, 30): # Adding the numbers to each independent set
 
 def vertex_is_a_w(vertex):
     found = False
+
     for i in range(0, len(vi_neighbors_list)):
-        if vertex in vi_neighbors_list[i]:
-            found = True
+        for j in range(0, len(vi_neighbors_list[i])):
+            if str(vertex) == str(vi_neighbors_list[i][j]):
+                found = True
     return found
 
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
@@ -107,24 +117,40 @@ file.close()
 G=nx.Graph()
 
 for line in range(0, len(matrix)):
-        for column in range(0, len(matrix[line])):
-            if line > column: # Bottom left corner of matrix
-                color = 0
-                if matrix[line][column] != 0:
-                    if matrix[line][column] == 1:
+    for column in range(0, len(matrix[line])):
+        if line > column: # Bottom left corner of matrix
+            color = 0
+            if matrix[line][column] != 0:
+                if matrix[line][column] == 1:
                         color = 'blue'
-                    if matrix[line][column] == 2:
-                        color = 'red'
-                    if vertex_is_a_w(line) == True:
-                        G.add_edge("W" + str(line), column, color=color, weight=2)
-                    else:
-                        G.add_edge("h" + str(line), column, color=color, weight=2)
+                if matrix[line][column] == 2:
+                    color = 'red'
+                if matrix[line][column] != 0:
+                    if vertex_is_a_w(line) == True and vertex_is_a_w(column) == True:
+                        G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
+                    elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == False:
+                        G.add_edge("h" + str(line), "h" + str(column), color=color, weight=2)
                     
+                    elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == True:
+                        G.add_edge("h" + str(line), "W" + str(column), color=color, weight=2)
+                    elif vertex_is_a_w(line) == True and vertex_is_a_w(column) == False:
+                        G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
+
+vertex_color_map = []
+
+for node in G:
+    node_name = int(str(node).replace("W", "").replace("h", ""))
+    if vertex_is_a_w(node_name) == True:
+        vertex_color_map.append('yellow')
+    else:
+        vertex_color_map.append('blue')
 
 pos = nx.circular_layout(G)
 edges = G.edges()
 colors = [G[u][v]['color'] for u,v in edges]
 weights = [G[u][v]['weight'] for u,v in edges]
 
-nx.draw(G, pos, edge_color=colors, width=1, with_labels=True)
+nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
+plt.clf()
+G.clear()
