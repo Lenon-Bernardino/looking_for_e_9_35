@@ -10,14 +10,6 @@ from networkx.drawing.nx_pydot import graphviz_layout
 # turn graph into a tree
 # Make triangle and 10-CI detector based on finding clumps of vertices
 
-# Problems to fix:
-# 1. There's repetitions in the vi neighbor list
-# 2. The graph is making vi neighbors adjacent to each other
-
-# ISSUE 2 IS PROBABLY IN THE MAKING OF THE MATRIX
-
-# 3. The graph is painting some H-W vertices in yellow even though yellow is for the W's
-
 eight_ci = []
 seven_ci = []
 six_ci = []
@@ -46,10 +38,9 @@ for i in range(0, 30): # Adding the numbers to each independent set
 
 def vertex_is_a_w(vertex):
     found = False
-
     for i in range(0, len(vi_neighbors_list)):
         for j in range(0, len(vi_neighbors_list[i])):
-            if str(vertex) == str(vi_neighbors_list[i][j]):
+            if vertex == vi_neighbors_list[i][j]:
                 found = True
     return found
 
@@ -77,12 +68,14 @@ def make_graph(w_number, h_number):
 
     for vi in range(0, len(vi_neighbors_list)):
         number_of_neighbors = 0
-        while number_of_neighbors != 5:
+
+        while number_of_neighbors != 5: # ADDING W'S
             random_number = random.randint(0, w_number+h_number-1)
             found_it_in_vi = False
-            for i in range(0, len(vi_neighbors_list[vi])):
-                if random_number in vi_neighbors_list[i]:
-                    found_it_in_vi = True
+            for i in range(0, len(vi_neighbors_list)):
+                for j in range(0, len(vi_neighbors_list[i])):
+                    if random_number == vi_neighbors_list[i][j]:
+                        found_it_in_vi = True
             if found_it_in_vi == False:
                 vi_neighbors_list[vi].append(random_number)
                 number_of_neighbors += 1
@@ -94,8 +87,6 @@ def make_graph(w_number, h_number):
             if line > column: # Bottom left corner of matrix
                 if is_part_of_ci(line, column) == False:
                     # THIS IS WHERE THINGS MUST HAPPEN
-
-                    
                     blue_or_red = random.choice([1, 2])
                     matrix[line].append(blue_or_red)
                 else:
@@ -117,15 +108,14 @@ file.close()
 G=nx.Graph()
 
 for line in range(0, len(matrix)):
-    for column in range(0, len(matrix[line])):
-        if line > column: # Bottom left corner of matrix
-            color = 0
-            if matrix[line][column] != 0:
-                if matrix[line][column] == 1:
-                        color = 'blue'
-                if matrix[line][column] == 2:
-                    color = 'red'
+        for column in range(0, len(matrix[line])):
+            if line > column: # Bottom left corner of matrix
+                color = 0
                 if matrix[line][column] != 0:
+                    if matrix[line][column] == 1:
+                        color = 'blue'
+                    if matrix[line][column] == 2:
+                        color = 'red'
                     if vertex_is_a_w(line) == True and vertex_is_a_w(column) == True:
                         G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
                     elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == False:
@@ -136,12 +126,20 @@ for line in range(0, len(matrix)):
                     elif vertex_is_a_w(line) == True and vertex_is_a_w(column) == False:
                         G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
 
-vertex_color_map = []
+vertex_color_map = []   
 
 for node in G:
-    node_name = int(str(node).replace("W", "").replace("h", ""))
-    if vertex_is_a_w(node_name) == True:
-        vertex_color_map.append('yellow')
+    node_name = str(node)
+    if "W" in node_name:
+        node_number = str(node_name).replace("W", "")
+        if int(node_number) in vi_neighbors_list[0]:
+            vertex_color_map.append('purple')
+        if int(node_number) in vi_neighbors_list[1]:
+            vertex_color_map.append('yellow')
+        if int(node_number) in vi_neighbors_list[2]:
+            vertex_color_map.append('orange')
+        if int(node_number) in vi_neighbors_list[3]:
+            vertex_color_map.append('limegreen')
     else:
         vertex_color_map.append('blue')
 
@@ -152,5 +150,3 @@ weights = [G[u][v]['weight'] for u,v in edges]
 
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
-plt.clf()
-G.clear()
