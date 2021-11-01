@@ -10,6 +10,8 @@ from networkx.drawing.nx_pydot import graphviz_layout
 # turn graph into a tree
 # Make triangle and 10-CI detector based on finding clumps of vertices
 
+G=nx.Graph()
+
 eight_ci = []
 seven_ci = []
 six_ci = []
@@ -121,18 +123,8 @@ def make_graph(w_number, h_number):
 
     return matrix
 
-matrix = make_graph(20, 15)
-
-print(str(matrix).replace("]", "]\n"))
-file = open("matrix.txt", "w")
-file.write(str(matrix).replace("]", "]\n"))
-file.close()
-
-# Making a graph out of the matrix (unrelated to how the matrix is generated)
-
-G=nx.Graph()
-
-for line in range(0, len(matrix)):
+def draw_graph(matrix):
+    for line in range(0, len(matrix)):
         for column in range(0, len(matrix[line])):
             if line > column: # Bottom left corner of matrix
                 color = 0
@@ -151,22 +143,38 @@ for line in range(0, len(matrix)):
                     elif vertex_is_a_w(line) == True and vertex_is_a_w(column) == False:
                         G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
 
+def color_vertices(vertex_color_map):
+    for node in G:
+        node_name = str(node)
+        if "W" in node_name:
+            node_number = str(node_name).replace("W", "")
+            if int(node_number) in vi_neighbors_list[0]:
+                vertex_color_map.append('purple')
+            if int(node_number) in vi_neighbors_list[1]:
+                vertex_color_map.append('yellow')
+            if int(node_number) in vi_neighbors_list[2]:
+                vertex_color_map.append('orange')
+            if int(node_number) in vi_neighbors_list[3]:
+                vertex_color_map.append('limegreen')
+        else:
+            vertex_color_map.append('blue')
+
+matrix = make_graph(20, 15)
+
+print(str(matrix).replace("]", "]\n"))
+file = open("matrix.txt", "w")
+file.write(str(matrix).replace("]", "]\n"))
+file.close()
+
+# Making a graph out of the matrix (unrelated to how the matrix is generated)
+
+draw_graph(matrix)
+
 vertex_color_map = []   
 
-for node in G:
-    node_name = str(node)
-    if "W" in node_name:
-        node_number = str(node_name).replace("W", "")
-        if int(node_number) in vi_neighbors_list[0]:
-            vertex_color_map.append('purple')
-        if int(node_number) in vi_neighbors_list[1]:
-            vertex_color_map.append('yellow')
-        if int(node_number) in vi_neighbors_list[2]:
-            vertex_color_map.append('orange')
-        if int(node_number) in vi_neighbors_list[3]:
-            vertex_color_map.append('limegreen')
-    else:
-        vertex_color_map.append('blue')
+color_vertices(vertex_color_map)
+
+
 
 pos = nx.circular_layout(G)
 edges = G.edges()
