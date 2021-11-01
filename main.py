@@ -16,8 +16,9 @@ six_ci = []
 five_ci = []
 four_ci = []
 
-vi_neighbors_list = [[], [], [], []]
+run_time_cis = []
 
+vi_neighbors_list = [[], [], [], []]
 
 # Blue triangle and Red K10 R(3, 10)
 # No edge = 0
@@ -45,7 +46,7 @@ def vertex_is_a_w(vertex):
     return found
 
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci]
+    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, run_time_cis]
     for i in range(0, len(vi_neighbors_list)):
         ci_list.append(vi_neighbors_list[i])
 
@@ -59,7 +60,22 @@ def is_part_of_ci(number1, number2): # Check if two numbers are in an independen
                 number2_is_in_ci = True
             if number1_is_in_ci == True and number2_is_in_ci == True:
                 return True
+    print(str(number1) + " and " + str(number2) + " aren't in " + str(ci_list))
     return False
+
+def amount_of_neighbors(vertex, matrix):
+    amount = 0
+    for i in range(0, len(matrix[vertex])):
+        if matrix[vertex][i] != 0:
+            amount += 1
+    return amount
+
+def get_neighbors(vertex, matrix):
+    neighbors = []
+    for i in range(0, len(matrix[vertex])):
+        if matrix[vertex][i] != 0:
+            neighbors.append(i)
+    return neighbors
 
 def make_graph(w_number, h_number):
     matrix = []
@@ -87,15 +103,24 @@ def make_graph(w_number, h_number):
             if line > column: # Bottom left corner of matrix
                 if is_part_of_ci(line, column) == False:
                     # THIS IS WHERE THINGS MUST HAPPEN
-                    blue_or_red = random.choice([1, 2])
-                    matrix[line].append(blue_or_red)
+                    if amount_of_neighbors(line, matrix) == 8 or amount_of_neighbors(column, matrix) == 8:
+                        matrix[line].append(0)
+                    else:
+                        blue_or_red = random.choice([0, 1])
+                        matrix[line].append(blue_or_red)
+                        neighbors_of_line = get_neighbors(line, matrix)
+                        neighbors_of_column = get_neighbors(column, matrix)
+                        if len(neighbors_of_line) > 1:
+                            run_time_cis.append(neighbors_of_line)
+                        if len(neighbors_of_column) > 1:
+                            run_time_cis.append(neighbors_of_column)
                 else:
                     matrix[line].append(0)
             else:
                 matrix[line].append(0)
 
     return matrix
-    
+
 matrix = make_graph(20, 15)
 
 print(str(matrix).replace("]", "]\n"))
@@ -147,6 +172,11 @@ pos = nx.circular_layout(G)
 edges = G.edges()
 colors = [G[u][v]['color'] for u,v in edges]
 weights = [G[u][v]['weight'] for u,v in edges]
+
+# FINDING CI'S and stuff
+
+
+
 
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
