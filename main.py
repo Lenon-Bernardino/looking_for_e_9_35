@@ -47,6 +47,16 @@ def vertex_is_a_w(vertex):
                 found = True
     return found
 
+def check_common_neighbor(list1, list2):
+    found_common = False
+    for i in range(0, len(list1)):
+        if list1[i] in list2:
+            found_common = True
+    for i in range(0, len(list2)):
+        if list2[i] in list1:
+            found_common = True
+    return found_common
+
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
     ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, run_time_cis]
     for i in range(0, len(vi_neighbors_list)):
@@ -108,19 +118,16 @@ def make_graph(w_number, h_number):
                     if amount_of_neighbors(line, matrix) == 8 or amount_of_neighbors(column, matrix) == 8:
                         matrix[line].append(0)
                     else:
-                        blue_or_red = random.choice([0, 1])
-                        matrix[line].append(blue_or_red)
                         neighbors_of_line = get_neighbors(line, matrix)
                         neighbors_of_column = get_neighbors(column, matrix)
-                        if len(neighbors_of_line) > 1:
-                            run_time_cis.append(neighbors_of_line)
-                        if len(neighbors_of_column) > 1:
-                            run_time_cis.append(neighbors_of_column)
+                        if check_common_neighbor(neighbors_of_line, neighbors_of_column) == True:
+                            matrix[line].append(0)
+                        else:
+                            matrix[line].append(1)
                 else:
                     matrix[line].append(0)
             else:
                 matrix[line].append(0)
-
     return matrix
 
 def draw_graph(matrix):
@@ -174,7 +181,21 @@ vertex_color_map = []
 
 color_vertices(vertex_color_map)
 
-
+def find_triangle(matrix):
+    for line in range(len(matrix)):
+        for column in range(len(matrix[i])):
+            if line > column: # Bottom left corner of matrix
+                # Making sure they are both connected to 2 vertices
+                if matrix[line][column] == 1 and amount_of_neighbors(line, matrix) >= 2 and amount_of_neighbors(column, matrix) >= 2:
+                    line_neighbors = get_neighbors(line, matrix)
+                    column_neighbors = get_neighbors(column, matrix)
+                    for line_neighbor in line_neighbors:
+                        if line_neighbor in column_neighbors:
+                            return [line, column, line_neighbor]
+                    for column_neighbor in column_neighbors:
+                        if column_neighbor in line_neighbors:
+                            return [line, column, column_neighbor]
+triangle = find_triangle(matrix)
 
 pos = nx.circular_layout(G)
 edges = G.edges()
@@ -183,8 +204,7 @@ weights = [G[u][v]['weight'] for u,v in edges]
 
 # FINDING CI'S and stuff
 
-
-
+print("Triangle: " + str(triangle))
 
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
