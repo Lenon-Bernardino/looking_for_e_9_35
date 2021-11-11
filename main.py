@@ -6,7 +6,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
-# Fix get amount of neighbors function
+# Building graph function from vertex 0 to 7
 # Try to make K10 detector
 
 G=nx.Graph()
@@ -20,11 +20,6 @@ four_ci = []
 run_time_cis = []
 
 vi_neighbors_list = [[], [], [], []]
-
-# Blue triangle and Red K10 R(3, 10)
-# No edge = 0
-# Blue = 1
-# Red = 2
 
 for i in range(0, 30): # Adding the numbers to each independent set
     if i < 8:
@@ -109,7 +104,7 @@ def make_graph(w_number, h_number):
 
     print("VI NEIGHBOR LIST: " + str(vi_neighbors_list))
 
-    for line in range(0, w_number+h_number):
+    for line in range(0, w_number+h_number): # Actually building graph matrix
         for column in range(0, w_number+h_number):
             if line > column: # Bottom left corner of matrix
                 independent_bool = is_part_of_ci(line, column)
@@ -194,61 +189,6 @@ def find_triangle(matrix):
 
 def find_k10(matrix):
     print("FINDING K10'S")
-    # new idea:
-    # find all vertices not connected to each vertex in the not connected list
-    # get 10 vertices at a time from that list, if they are all non-adjacent then found it
-    not_connected = [] # Pairs of non_neighbors
-    list_of_vertices_in_not_connected = []
-    independent_sets = []
-    def is_connected(vertex1, vertex2): # Check if vertices are connected, but only works in the list not_connected
-        connected = True
-        for i in range(0, len(not_connected)):
-            if not_connected[i] == [vertex1, vertex2]:
-                connected = False
-            if not_connected[i] == [vertex2, vertex1]:
-                connected = False
-        return connected
-
-    for line in range(len(matrix)): # Adding all pairs of vertices that aren't connected
-        for column in range(len(matrix[line])):
-            if line > column: # Bottom left corner of matrix
-                if matrix[line][column] == 0:
-                    not_connected.append([line, column])
-
-    for i in range(0, len(not_connected)): # Adding all the vertices from the pairs list
-        list_of_vertices_in_not_connected.append(not_connected[i][0])
-        list_of_vertices_in_not_connected.append(not_connected[i][1])
-    
-    for a in range(0, len(list_of_vertices_in_not_connected)):
-        print("At vertex: " + str(a))
-        for b in range(0, len(list_of_vertices_in_not_connected)):
-            print("At vertex: " + str(b))
-            for c in range(0, len(list_of_vertices_in_not_connected)):
-                print("At vertex: " + str(c))
-                for d in range(0, len(list_of_vertices_in_not_connected)):
-                    print("At vertex: " + str(d))
-                    for e in range(0, len(list_of_vertices_in_not_connected)):
-                        print("At vertex: " + str(e))
-                        for f in range(0, len(list_of_vertices_in_not_connected)):
-                            print("At vertex: " + str(f))
-                            for g in range(0, len(list_of_vertices_in_not_connected)):
-                                print("At vertex: " + str(g))
-                                for h in range(0, len(list_of_vertices_in_not_connected)):
-                                    print("At vertex: " + str(h))
-                                    for i in range(0, len(list_of_vertices_in_not_connected)):
-                                        for j in range(0, len(list_of_vertices_in_not_connected)):
-                                            current_vertices = [a, b, c, d, e, f, g, h, i, j]
-                                            one_is_connected = False
-
-                                            for vertex1 in range(0, len(current_vertices)):
-                                                for vertex2 in range(0, len(current_vertices)):
-                                                    if vertex1 != vertex2:
-                                                        if is_connected(vertex1, vertex2):
-                                                            one_is_connected = True
-
-                                            if one_is_connected == False:
-                                                return current_vertices
-    return []
 
 triangle = find_triangle(matrix)
 # k10 = find_k10(matrix)
