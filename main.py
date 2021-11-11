@@ -5,6 +5,7 @@ import networkx
 import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
+import time
 
 # Things to do:
 # turn graph into a tree
@@ -58,7 +59,11 @@ def check_common_neighbor(list1, list2):
     return found_common
 
 def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, run_time_cis]
+    run_time_cis_decomposed = []
+    for i in range(0, len(run_time_cis)):
+        run_time_cis_decomposed.append(run_time_cis[i])
+
+    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, run_time_cis_decomposed]
     for i in range(0, len(vi_neighbors_list)):
         ci_list.append(vi_neighbors_list[i])
 
@@ -80,6 +85,10 @@ def amount_of_neighbors(vertex, matrix):
     for i in range(0, len(matrix[vertex])):
         if matrix[vertex][i] != 0:
             amount += 1
+
+    if amount == 0:
+        print("Found a 0 at vertex " + str(vertex))
+
     return amount
 
 def get_neighbors(vertex, matrix):
@@ -91,13 +100,13 @@ def get_neighbors(vertex, matrix):
 
 def make_graph(w_number, h_number):
     matrix = []
-    for i in range(0, w_number+h_number):
+    for i in range(0, w_number+h_number): # ADDING SPOTS IN THE MATRIX
         matrix.append([])
 
-    for vi in range(0, len(vi_neighbors_list)):
+    for vi in range(0, len(vi_neighbors_list)): # ADDING W'S TO W LISTS
         number_of_neighbors = 0
 
-        while number_of_neighbors != 5: # ADDING W'S
+        while number_of_neighbors != 5:
             random_number = random.randint(0, w_number+h_number-1)
             found_it_in_vi = False
             for i in range(0, len(vi_neighbors_list)):
@@ -110,12 +119,12 @@ def make_graph(w_number, h_number):
 
     print("VI NEIGHBOR LIST: " + str(vi_neighbors_list))
 
-    for line in range(0, w_number+h_number):
+    for line in range(0, w_number+h_number): # ACTUALLY DRAWING THE MATRIX
         for column in range(0, w_number+h_number):
             if line > column: # Bottom left corner of matrix
                 if is_part_of_ci(line, column) == False:
                     # THIS IS WHERE THINGS MUST HAPPEN
-                    if amount_of_neighbors(line, matrix) == 8 or amount_of_neighbors(column, matrix) == 8:
+                    if amount_of_neighbors(line, matrix) > 7 or amount_of_neighbors(column, matrix) > 7:
                         matrix[line].append(0)
                     else:
                         neighbors_of_line = get_neighbors(line, matrix)
@@ -124,6 +133,7 @@ def make_graph(w_number, h_number):
                             matrix[line].append(0)
                         else:
                             matrix[line].append(1)
+                            run_time_cis.append([line, column])
                 else:
                     matrix[line].append(0)
             else:
@@ -134,17 +144,12 @@ def draw_graph(matrix):
     for line in range(0, len(matrix)):
         for column in range(0, len(matrix[line])):
             if line > column: # Bottom left corner of matrix
-                color = 0
+                color = 'blue'
                 if matrix[line][column] != 0:
-                    if matrix[line][column] == 1:
-                        color = 'blue'
-                    if matrix[line][column] == 2:
-                        color = 'red'
                     if vertex_is_a_w(line) == True and vertex_is_a_w(column) == True:
                         G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
                     elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == False:
                         G.add_edge("h" + str(line), "h" + str(column), color=color, weight=2)
-                    
                     elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == True:
                         G.add_edge("h" + str(line), "W" + str(column), color=color, weight=2)
                     elif vertex_is_a_w(line) == True and vertex_is_a_w(column) == False:
@@ -197,62 +202,22 @@ def find_triangle(matrix):
                             return [line, column, column_neighbor]
 
 def find_k10(matrix):
-    print("FINDING K10'S")
-    # new idea:
-    # find all vertices not connected to each vertex in the not connected list
-    # get 10 vertices at a time from that list, if they are all non-adjacent then found it
-    not_connected = [] # Pairs of non_neighbors
-    list_of_vertices_in_not_connected = []
-    independent_sets = []
-    def is_connected(vertex1, vertex2): # Check if vertices are connected, but only works in the list not_connected
-        connected = True
-        for i in range(0, len(not_connected)):
-            if not_connected[i] == [vertex1, vertex2]:
-                connected = False
-            if not_connected[i] == [vertex2, vertex1]:
-                connected = False
-        return connected
-
-    for line in range(len(matrix)): # Adding all pairs of vertices that aren't connected
-        for column in range(len(matrix[line])):
-            if line > column: # Bottom left corner of matrix
+    # Think in terms of the matrix
+    print("")
+    start = time.time()
+    for line in range(len(matrix)):
+        for column in range(len(matrix[i])):
+            if line > column:
                 if matrix[line][column] == 0:
-                    not_connected.append([line, column])
-
-    for i in range(0, len(not_connected)): # Adding all the vertices from the pairs list
-        list_of_vertices_in_not_connected.append(not_connected[i][0])
-        list_of_vertices_in_not_connected.append(not_connected[i][1])
+                    print("")
+                end = time.time()
+                elapsed = end-start
+                if elapsed > 0:
+                    print("Time elapsed: " + str(elapsed))
+                    print("Years for it to finish: " + str((elapsed*70572902400)/(60*60*24*365)))
+                    input("")
     
-    for a in range(0, len(list_of_vertices_in_not_connected)):
-        print("At vertex: " + str(a))
-        for b in range(0, len(list_of_vertices_in_not_connected)):
-            print("At vertex: " + str(b))
-            for c in range(0, len(list_of_vertices_in_not_connected)):
-                print("At vertex: " + str(c))
-                for d in range(0, len(list_of_vertices_in_not_connected)):
-                    print("At vertex: " + str(d))
-                    for e in range(0, len(list_of_vertices_in_not_connected)):
-                        print("At vertex: " + str(e))
-                        for f in range(0, len(list_of_vertices_in_not_connected)):
-                            print("At vertex: " + str(f))
-                            for g in range(0, len(list_of_vertices_in_not_connected)):
-                                print("At vertex: " + str(g))
-                                for h in range(0, len(list_of_vertices_in_not_connected)):
-                                    print("At vertex: " + str(h))
-                                    for i in range(0, len(list_of_vertices_in_not_connected)):
-                                        for j in range(0, len(list_of_vertices_in_not_connected)):
-                                            current_vertices = [a, b, c, d, e, f, g, h, i, j]
-                                            one_is_connected = False
-
-                                            for vertex1 in range(0, len(current_vertices)):
-                                                for vertex2 in range(0, len(current_vertices)):
-                                                    if vertex1 != vertex2:
-                                                        if is_connected(vertex1, vertex2):
-                                                            one_is_connected = True
-
-                                            if one_is_connected == False:
-                                                return current_vertices
-    return []
+    
 
 triangle = find_triangle(matrix)
 # k10 = find_k10(matrix)
@@ -266,6 +231,10 @@ weights = [G[u][v]['weight'] for u,v in edges]
 
 print("Triangle: " + str(triangle))
 # print("K10: " + str(k10))
+
+print("Matrix has " + str(len(matrix)) + " lines")
+
+print("Matrix has " + str(len(matrix[0])) + " columns")
 
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
