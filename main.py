@@ -6,8 +6,16 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
-# Building graph function from vertex 0 to 7
-# Try to make K10 detector
+# This might require a big overhaul
+
+# How to do it:
+
+# Make one that doesn't depend on random factors, the W's are fixed vertices
+# Don't make it have those hard-coded independent sets
+# Keep avoiding triangles
+# Keep the way of drawing the matrix with networkx
+
+# In short, keep everything except the way I'm handling the independent sets
 
 G=nx.Graph()
 
@@ -90,7 +98,6 @@ def make_graph(w_number, h_number):
 
     for vi in range(0, len(vi_neighbors_list)):
         number_of_neighbors = 0
-
         while number_of_neighbors != 5: # ADDING W'S
             random_number = random.randint(0, w_number+h_number-1)
             found_it_in_vi = False
@@ -116,6 +123,10 @@ def make_graph(w_number, h_number):
                 if independent_bool == False and has_eight_neighbors == False and has_common_neighbor == False:
                     matrix[line].append(1)
                 else:
+                    if line == 7:
+                        print("Is in CI: " + str(independent_bool))
+                        print("Has more than eight neighbors: " + str(has_eight_neighbors))
+                        print("Has common neighbor: " + str(has_common_neighbor))
                     matrix[line].append(0)
             else:
                 matrix[line].append(0)
@@ -129,8 +140,6 @@ def draw_graph(matrix):
                 if matrix[line][column] != 0:
                     if matrix[line][column] == 1:
                         color = 'blue'
-                    if matrix[line][column] == 2:
-                        color = 'red'
                     if vertex_is_a_w(line) == True and vertex_is_a_w(column) == True:
                         G.add_edge("W" + str(line), "h" + str(column), color=color, weight=2)
                     elif vertex_is_a_w(line) == False and vertex_is_a_w(column) == False:
