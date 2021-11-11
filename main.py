@@ -198,13 +198,13 @@ def find_triangle(matrix):
 
 def find_k10(matrix):
     print("FINDING K10'S")
-    # make list a of everything that's not connected
-    # then for every vertex, get a list of all other vertices not connected to it, then remove the ones that have connections among themselves
-    # then check the independent sets, if they have 10 or more vertices, then it's a K10
-    not_connected = []
+    # new idea:
+    # find all vertices not connected to each vertex in the not connected list
+    # get 10 vertices at a time from that list, if they are all non-adjacent then found it
+    not_connected = [] # Pairs of non_neighbors
+    list_of_vertices_in_not_connected = []
     independent_sets = []
-    independent_sets_new = []
-    def is_connected(vertex1, vertex2):
+    def is_connected(vertex1, vertex2): # Check if vertices are connected, but only works in the list not_connected
         connected = True
         for i in range(0, len(not_connected)):
             if not_connected[i] == [vertex1, vertex2]:
@@ -213,45 +213,49 @@ def find_k10(matrix):
                 connected = False
         return connected
 
-    for line in range(len(matrix)):
+    for line in range(len(matrix)): # Adding all pairs of vertices that aren't connected
         for column in range(len(matrix[line])):
             if line > column: # Bottom left corner of matrix
                 if matrix[line][column] == 0:
                     not_connected.append([line, column])
-    
-    for line in range(len(matrix)):
-        for column in range(len(matrix[line])):
-            if line > column:
-                not_connected_to_current_vertex = []
-                for i in range(0, len(not_connected)):
-                    if line in not_connected[i]:
-                        if not_connected[i][0] != line:
-                            not_connected_to_current_vertex.append(not_connected[i][0])
-                        elif not_connected[i][1] != line:
-                            not_connected_to_current_vertex.append(not_connected[i][1])
-                        
-                for i in range(0, len(not_connected_to_current_vertex)):
-                    for j in range(0, len(not_connected_to_current_vertex)):
-                        if i != j:
-                            if is_connected(i, j) == True:
-                                not_connected_to_current_vertex[i] = "PAH"
-                                not_connected_to_current_vertex[j] = "PAH"
-                if "PAH" not in not_connected_to_current_vertex:
-                    independent_sets.append(not_connected_to_current_vertex)
-                    print(not_connected_to_current_vertex)
-    
-    print("Independent sets: " + str(independent_sets))
 
-    for i in range(0, len(independent_sets)):
-        if len(independent_sets[i]) >= 9:
-            return [independent_sets[i]]
+    for i in range(0, len(not_connected)): # Adding all the vertices from the pairs list
+        list_of_vertices_in_not_connected.append(not_connected[i][0])
+        list_of_vertices_in_not_connected.append(not_connected[i][1])
+    
+    for a in range(0, len(list_of_vertices_in_not_connected)):
+        print("At vertex: " + str(a))
+        for b in range(0, len(list_of_vertices_in_not_connected)):
+            print("At vertex: " + str(b))
+            for c in range(0, len(list_of_vertices_in_not_connected)):
+                print("At vertex: " + str(c))
+                for d in range(0, len(list_of_vertices_in_not_connected)):
+                    print("At vertex: " + str(d))
+                    for e in range(0, len(list_of_vertices_in_not_connected)):
+                        print("At vertex: " + str(e))
+                        for f in range(0, len(list_of_vertices_in_not_connected)):
+                            print("At vertex: " + str(f))
+                            for g in range(0, len(list_of_vertices_in_not_connected)):
+                                print("At vertex: " + str(g))
+                                for h in range(0, len(list_of_vertices_in_not_connected)):
+                                    print("At vertex: " + str(h))
+                                    for i in range(0, len(list_of_vertices_in_not_connected)):
+                                        for j in range(0, len(list_of_vertices_in_not_connected)):
+                                            current_vertices = [a, b, c, d, e, f, g, h, i, j]
+                                            one_is_connected = False
 
+                                            for vertex1 in range(0, len(current_vertices)):
+                                                for vertex2 in range(0, len(current_vertices)):
+                                                    if vertex1 != vertex2:
+                                                        if is_connected(vertex1, vertex2):
+                                                            one_is_connected = True
+
+                                            if one_is_connected == False:
+                                                return current_vertices
     return []
 
-    
-
 triangle = find_triangle(matrix)
-k10 = find_k10(matrix)
+# k10 = find_k10(matrix)
 
 pos = nx.circular_layout(G)
 edges = G.edges()
@@ -261,7 +265,7 @@ weights = [G[u][v]['weight'] for u,v in edges]
 # FINDING CI'S and stuff
 
 print("Triangle: " + str(triangle))
-print("K10: " + str(k10))
+# print("K10: " + str(k10))
 
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
