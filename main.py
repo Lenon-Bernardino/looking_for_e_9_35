@@ -6,76 +6,53 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
-# This might require a big overhaul
-
-# How to do it:
-
-# Make one that doesn't depend on random factors, the W's are fixed vertices
-# Don't make it have those hard-coded independent sets
-# Keep avoiding triangles
-# Keep the way of drawing the matrix with networkx
-
-# In short, keep everything except the way I'm handling the independent sets
-
 G=nx.Graph()
 
-eight_ci = []
-seven_ci = []
-six_ci = []
-five_ci = []
-four_ci = []
+# CONFIGURATION:
+number_of_ws_per_vi = 5
+number_of_vis = 4
 
-run_time_cis = []
 
-vi_neighbors_list = [[], [], [], []]
+w_sets = []
 
-for i in range(0, 30): # Adding the numbers to each independent set
-    if i < 8:
-        eight_ci.append(i)
-    if i > 7 and i < 15:
-        seven_ci.append(i)
-    if i > 14 and i < 21:
-        six_ci.append(i)
-    if i > 20 and i < 26:
-        five_ci.append(i)
-    if i > 25 and i < 30:
-        four_ci.append(i)
+def w_already_exists(w_sets, w):
+    for i in range(0, len(w_sets)):
+        for j in range(0, len(w_sets[i])):
+            if w_sets[i][j] == w:
+                return True
+    return False
 
-def vertex_is_a_w(vertex):
+amount_of_ws = 0
+for i in range(0, number_of_vis): # SETTING UP W'S
+    w_sets.append([])
+    for j in range(0, number_of_ws_per_vi):
+        w_sets[i].append(amount_of_ws)
+        amount_of_ws += 1
+
+print("W'S: " + str(w_sets))
+
+def vertex_is_a_w(vertex): # CHECKS IF VERTEX IS A NEIGHBOR OF THE VI'S
     found = False
-    for i in range(0, len(vi_neighbors_list)):
-        for j in range(0, len(vi_neighbors_list[i])):
-            if vertex == vi_neighbors_list[i][j]:
+    for i in range(0, len(w_sets)):
+        for j in range(0, len(w_sets[i])):
+            if vertex == w_sets[i][j]:
                 found = True
     return found
+
+def vertices_in_same_w_set(vertex1, vertex2):
+    for i in range(0, len(w_sets)):
+        if vertex1 in w_sets[i] and vertex2 in w_sets[i]:
+            print(str(vertex1) + " and " + str(vertex2) + " are in the same w set")
+            print(w_sets[i])
+            return True
+    return False
 
 def check_common_neighbor(list1, list2):
     found_common = False
     for i in range(0, len(list1)):
         if list1[i] in list2:
             found_common = True
-    for i in range(0, len(list2)):
-        if list2[i] in list1:
-            found_common = True
     return found_common
-
-def is_part_of_ci(number1, number2): # Check if two numbers are in an independent set
-    ci_list = [eight_ci, seven_ci, six_ci, five_ci, four_ci, run_time_cis]
-    for i in range(0, len(vi_neighbors_list)):
-        ci_list.append(vi_neighbors_list[i])
-
-    for i in range(0, len(ci_list)):
-        number1_is_in_ci = False
-        number2_is_in_ci = False
-        for j in range(0, len(ci_list[i])):
-            if number1 == ci_list[i][j]:
-                number1_is_in_ci = True
-            if number2 == ci_list[i][j]:
-                number2_is_in_ci = True
-            if number1_is_in_ci == True and number2_is_in_ci == True:
-                return True
-    print(str(number1) + " and " + str(number2) + " aren't in " + str(ci_list))
-    return False
 
 def amount_of_neighbors(vertex, matrix):
     amount = 0
@@ -91,45 +68,49 @@ def get_neighbors(vertex, matrix):
             neighbors.append(i)
     return neighbors
 
-def make_graph(w_number, h_number):
+def find_triangle(matrix):
+    for line in range(len(matrix)):
+        for column in range(len(matrix[line])):
+            if line > column: # Bottom left corner of matrix
+                # Making sure they are both connected to 2 vertices
+                if matrix[line][column] == 1 and amount_of_neighbors(line, matrix) >= 2 and amount_of_neighbors(column, matrix) >= 2:
+                    line_neighbors = get_neighbors(line, matrix)
+                    column_neighbors = get_neighbors(column, matrix)
+                    for line_neighbor in line_neighbors:
+                        if line_neighbor in column_neighbors:
+                            return [line, column, line_neighbor]
+                    for column_neighbor in column_neighbors:
+                        if column_neighbor in line_neighbors:
+                            return [line, column, column_neighbor]
+
+def make_graph_matrix(): # MAKING GRAPH MATRIX, WHERE AVOINDING TRIANGLES MUST HAPPEN
     matrix = []
-    for i in range(0, w_number+h_number):
+
+    for i in range(0, 35): # Setting up matrix empty lines
         matrix.append([])
 
-    for vi in range(0, len(vi_neighbors_list)):
-        number_of_neighbors = 0
-        while number_of_neighbors != 5: # ADDING W'S
-            random_number = random.randint(0, w_number+h_number-1)
-            found_it_in_vi = False
-            for i in range(0, len(vi_neighbors_list)):
-                for j in range(0, len(vi_neighbors_list[i])):
-                    if random_number == vi_neighbors_list[i][j]:
-                        found_it_in_vi = True
-            if found_it_in_vi == False:
-                vi_neighbors_list[vi].append(random_number)
-                number_of_neighbors += 1
-
-    print("VI NEIGHBOR LIST: " + str(vi_neighbors_list))
-
-    for line in range(0, w_number+h_number): # Actually building graph matrix
-        for column in range(0, w_number+h_number):
-            if line > column: # Bottom left corner of matrix
-                independent_bool = is_part_of_ci(line, column)
-                has_eight_neighbors = (amount_of_neighbors(line, matrix) > 7 or amount_of_neighbors(column, matrix) > 7)
-                neighbors_of_line = get_neighbors(line, matrix)
-                neighbors_of_column = get_neighbors(column, matrix)
-                has_common_neighbor = check_common_neighbor(neighbors_of_line, neighbors_of_column)
-                
-                if independent_bool == False and has_eight_neighbors == False and has_common_neighbor == False:
-                    matrix[line].append(1)
+    for line in range(0, 35):
+        for column in range(0, 35):
+            if line > column: # Bottom left of the matrix
+                if vertex_is_a_w(line) == True and vertex_is_a_w(column) == True:
+                    print("W with W")
                 else:
-                    if line == 7:
-                        print("Is in CI: " + str(independent_bool))
-                        print("Has more than eight neighbors: " + str(has_eight_neighbors))
-                        print("Has common neighbor: " + str(has_common_neighbor))
+                    print("other")
+                if vertices_in_same_w_set(line, column) == True: # If both vertices are w's in the same set
                     matrix[line].append(0)
-            else:
+                else: # If it's either 2 h's or a W and an H or 2 W's from different sets
+                    neighbors_of_line = get_neighbors(line, matrix)
+                    neighbors_of_column = get_neighbors(column, matrix)
+                    has_common_neighbor = check_common_neighbor(neighbors_of_line, neighbors_of_column)
+
+                    if has_common_neighbor == False:
+                        matrix[line].append(1)
+                    else:
+                        matrix[line].append(0)
+
+            else: # Top right of the matrix
                 matrix[line].append(0)
+
     return matrix
 
 def draw_graph(matrix):
@@ -155,49 +136,20 @@ def color_vertices(vertex_color_map):
         node_name = str(node)
         if "W" in node_name:
             node_number = str(node_name).replace("W", "")
-            if int(node_number) in vi_neighbors_list[0]:
+            if int(node_number) in w_sets[0]:
                 vertex_color_map.append('purple')
-            if int(node_number) in vi_neighbors_list[1]:
+            if int(node_number) in w_sets[1]:
                 vertex_color_map.append('yellow')
-            if int(node_number) in vi_neighbors_list[2]:
+            if int(node_number) in w_sets[2]:
                 vertex_color_map.append('orange')
-            if int(node_number) in vi_neighbors_list[3]:
+            if int(node_number) in w_sets[3]:
                 vertex_color_map.append('limegreen')
         else:
             vertex_color_map.append('blue')
 
-matrix = make_graph(20, 15)
-
-print(str(matrix).replace("]", "]\n"))
-file = open("matrix.txt", "w")
-file.write(str(matrix).replace("]", "]\n"))
-file.close()
-
-# Making a graph out of the matrix (unrelated to how the matrix is generated)
+matrix = make_graph_matrix()
 
 draw_graph(matrix)
-
-vertex_color_map = []   
-
-color_vertices(vertex_color_map)
-
-def find_triangle(matrix):
-    for line in range(len(matrix)):
-        for column in range(len(matrix[line])):
-            if line > column: # Bottom left corner of matrix
-                # Making sure they are both connected to 2 vertices
-                if matrix[line][column] == 1 and amount_of_neighbors(line, matrix) >= 2 and amount_of_neighbors(column, matrix) >= 2:
-                    line_neighbors = get_neighbors(line, matrix)
-                    column_neighbors = get_neighbors(column, matrix)
-                    for line_neighbor in line_neighbors:
-                        if line_neighbor in column_neighbors:
-                            return [line, column, line_neighbor]
-                    for column_neighbor in column_neighbors:
-                        if column_neighbor in line_neighbors:
-                            return [line, column, column_neighbor]
-
-def find_k10(matrix):
-    print("FINDING K10'S")
 
 triangle = find_triangle(matrix)
 # k10 = find_k10(matrix)
@@ -209,8 +161,17 @@ weights = [G[u][v]['weight'] for u,v in edges]
 
 # FINDING CI'S and stuff
 
+# for i in range(0, 35):
+#    print(str(i) + " has " + str(amount_of_neighbors(i, matrix)) + " neighbors")
+
+
 print("Triangle: " + str(triangle))
 # print("K10: " + str(k10))
 
+vertex_color_map = []   
+
+color_vertices(vertex_color_map)
+
 nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
 plt.show()
+
