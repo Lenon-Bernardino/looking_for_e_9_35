@@ -6,6 +6,8 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
+# Currently flawless
+
 debugging = False
 yes_or_no = input("Are you just testing it? [y/n]")
 if yes_or_no == "y":
