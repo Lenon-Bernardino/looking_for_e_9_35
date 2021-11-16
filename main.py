@@ -99,7 +99,8 @@ while True:
             for column in range(0, 35):
                 if line != column: # If it's not the diagonal
                     if vertices_in_same_w_set(line, column) == True: # If both vertices are w's in the same set
-                        matrix[line][column]
+                        matrix[line][column] = 0
+                        matrix[column][line] = 0
                     else: # If it's either 2 h's or a W and an H or 2 W's from different sets
                         neighbors_of_line = get_neighbors(line, matrix)
                         neighbors_of_column = get_neighbors(column, matrix)
