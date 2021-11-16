@@ -6,14 +6,30 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
-# Currently flawless
+class current_report:
+    def __init__(self, average_Hs, average_Ws, iterations, Hs_ever, Ws_ever):
+        self.Hs_ever = Hs_ever
+        self.Ws_ever = Ws_ever
+        self.average_Hs = average_Hs
+        self.average_Ws = average_Ws
+        self.iterations = iterations
 
+average_list = []
+for i in range(0, 35):
+    average_list.append(0)
+
+new_report = current_report(average_list, average_list, 0, average_list, average_list)
+
+iterations = 0
 debugging = False
 yes_or_no = input("Are you just testing it? [y/n]")
 if yes_or_no == "y":
     debugging = True
 
 while True:
+    vertices_not_completed = []
+    iterations += 1
+
     G=nx.Graph()
     
     # CONFIGURATION:
@@ -164,6 +180,46 @@ while True:
                     vertex_color_map.append('limegreen')
             else:
                 vertex_color_map.append('blue')
+
+    
+    def update(new_report, matrix):
+        new_report.iterations = iterations
+        print("Hs ever: " + str(new_report.Hs_ever))
+        print("Ws ever:" + str(new_report.Ws_ever))
+
+        for vertex in range(0, len(matrix)):
+            vertex_neighbors = get_neighbors(vertex, matrix)
+            for neighbor in vertex_neighbors:
+                if vertex_is_a_w(neighbor) == True:
+                    new_report.Hs_ever[vertex] = new_report.Hs_ever[vertex] + 1
+                else:
+                    new_report.Ws_ever[vertex] = new_report.Ws_ever[vertex] + 1
+        
+        for i in range(0, len(new_report.Hs_ever)):
+            new_report.Hs_ever[i] = new_report.Hs_ever[i]
+            new_report.Ws_ever[i] = new_report.Ws_ever[i]
+            new_report.average_Hs[i] = new_report.Hs_ever[i] / iterations
+            new_report.average_Ws[i] = new_report.Ws_ever[i] / iterations
+                
+
+    def write_report(new_report): # WHAT'S MISSING: amount of H's and W's connected to each vertex on average, and the matrix with average values
+        text_to_write = ""
+        things_to_write = []
+        things_to_write.append("Iterations: " + str(iterations) + "\n")
+        for i in range(0, len(new_report.average_Hs)):
+            vertex1_name = ""
+            if vertex_is_a_w(i) == True:
+                vertex1_name = "W" + str(i)
+            else:
+                vertex1_name = "h" + str(i)
+
+            things_to_write.append(vertex1_name + ": " + str(new_report.average_Hs[i]) + " H's and " + str(new_report.average_Ws[i]) + " W's\n")
+
+        for i in range(0, len(things_to_write)):
+            text_to_write += things_to_write[i]
+
+        file_to_write = open("analysis.txt", "w")
+        file_to_write.write(text_to_write)
     
     matrix = make_graph_matrix()
     
@@ -193,7 +249,7 @@ while True:
                     matrix[line][possible_new_neighbor] = 1
                     matrix[possible_new_neighbor][line] = 1
     
-    for i in range(0, 35):
+    for i in range(0, len(matrix)):
        print(str(i) + " has " + str(amount_of_neighbors(i, matrix)) + " neighbors")
     
     draw_graph(matrix)
@@ -208,7 +264,7 @@ while True:
     
     # FINDING CI'S and stuff
     
-    for i in range(0, 35):
+    for i in range(0, len(matrix)):
        print(str(i) + " has " + str(amount_of_neighbors(i, matrix)) + " neighbors")
     
     
@@ -222,7 +278,10 @@ while True:
     color_vertices(vertex_color_map)
     
     nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
-    
+
+    update(new_report, matrix)
+    write_report(new_report)
+
     if failed_to_fix_all == False:
         file_to_write = open("OMG_FOUND_IT.txt", "w")
         file_to_write.write(str(matrix).replace("]", "\n"))
