@@ -6,6 +6,11 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from networkx.drawing.nx_pydot import graphviz_layout
 
+debugging = False
+yes_or_no = input("Are you just testing it? [y/n]")
+if yes_or_no == "y":
+    debugging = True
+
 while True:
     G=nx.Graph()
     
@@ -218,3 +223,9 @@ while True:
     
     if failed_to_fix_all == False:
         plt.show()
+
+    if debugging:
+        plt.show()
+
+    plt.clf()
+    G.clear()
