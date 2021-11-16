@@ -222,6 +222,10 @@ while True:
     nx.draw(G, pos, edge_color=colors, width=1, with_labels=True, node_color=vertex_color_map)
     
     if failed_to_fix_all == False:
+        file_to_write = open("OMG_FOUND_IT.txt", "w")
+        file_to_write.write(str(matrix).replace("]", "\n"))
+        file_to_write.close()
+        plt.savefig("OMG_FOUND_IT.png")
         plt.show()
 
     if debugging:
